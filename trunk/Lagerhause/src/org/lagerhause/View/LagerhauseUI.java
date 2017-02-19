@@ -1,0 +1,437 @@
+package org.lagerhause.View;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.servlet.annotation.WebServlet;
+
+import org.lagerhause.Model.Classes.User;
+import org.lagerhause.Model.Services.LoginService;
+import org.lagerhause.View.Constants.Constants;
+import org.lagerhause.View.Constants.Version;
+
+import com.vaadin.annotations.Theme;
+import com.vaadin.annotations.VaadinServletConfiguration;
+import com.vaadin.event.ShortcutAction.KeyCode;
+import com.vaadin.navigator.Navigator;
+import com.vaadin.navigator.ViewChangeListener;
+import com.vaadin.server.Page;
+import com.vaadin.server.Responsive;
+import com.vaadin.server.StreamResource;
+import com.vaadin.server.ThemeResource;
+import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServlet;
+import com.vaadin.server.VaadinSession;
+import com.vaadin.shared.ui.label.ContentMode;
+import com.vaadin.ui.Alignment;
+import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.Button.ClickListener;
+import com.vaadin.ui.Component;
+import com.vaadin.ui.ComponentContainer;
+import com.vaadin.ui.CssLayout;
+import com.vaadin.ui.GridLayout;
+import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Image;
+import com.vaadin.ui.Label;
+import com.vaadin.ui.MenuBar;
+import com.vaadin.ui.MenuBar.MenuItem;
+import com.vaadin.ui.Notification;
+import com.vaadin.ui.Notification.Type;
+import com.vaadin.ui.PasswordField;
+import com.vaadin.ui.TextField;
+import com.vaadin.ui.UI;
+import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.themes.ValoTheme;
+
+/**
+ * A fő GUI osztály
+ * @author Pilán Ádám György
+ *
+ */
+
+@Theme("lagerhause")
+public class LagerhauseUI extends UI {
+	//------------------------------------------------------------------------
+	private static final long serialVersionUID = 2367005951844709763L;
+	//------------------------------------------------------------------------
+	private User loggedUser;
+	private final ValoMenuLayout root = new ValoMenuLayout();
+    private final ComponentContainer viewDisplay = root.getContentContainer();
+    private final CssLayout menu = new CssLayout();
+    private final CssLayout menuItemsLayout = new CssLayout();
+    private Navigator navigator;
+    private final Map<String,String> menuItems = new LinkedHashMap<String, String>();
+    private MenuBar userSettings;
+    private MenuItem settingsItem;
+    //-----------------------------------------------------------------------
+	@WebServlet(value = "/*", asyncSupported = true)
+	@VaadinServletConfiguration(productionMode = false, ui = LagerhauseUI.class)
+	public static class Servlet extends VaadinServlet {
+		private static final long serialVersionUID = 6315391713863166888L;
+	}
+
+	/**
+	 * Inicializáló metódus
+	 */
+	@Override
+	protected void init(final VaadinRequest request) {
+		loggedUser = (User) getSession().getAttribute(Constants.USER);
+        if (loggedUser == null) {
+            createLoginUIWithLogo();
+        } else {
+            createMainUI();
+        }
+	}
+	
+	/**
+	 * UI megalkotása, ha a user bejelentkezett
+	 */
+	private void createMainUI() {
+		menuItems.clear();
+        menu.removeAllComponents();
+        menuItemsLayout.removeAllComponents();
+        Responsive.makeResponsive(this);
+        setContent(root);
+        root.setWidth(Constants.SIZE_100_PERCENT);
+        root.addMenu(buildMenu());
+        addStyleName(ValoTheme.UI_WITH_MENU);
+        navigator = new Navigator(this, viewDisplay);
+        addViewsToNavigator();
+        final String fragment = Page.getCurrent().getUriFragment();
+        if (fragment == null || Constants.EMPTY_STRING.equals(fragment)) {
+            navigator.navigateTo(Constants.WELCOME_SCREEN);
+        }
+        navigator.setErrorView(WelcomePanel.class);
+        navigator.addViewChangeListener(getViewChangeListener());
+	}
+
+	/**
+	 * Nézetváltási esemény létrehozása
+	 * @return A Listener a navigator-hoz
+	 */
+	private ViewChangeListener getViewChangeListener() {
+		return new ViewChangeListener() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean beforeViewChange(final ViewChangeEvent event) {
+				return true;
+			}
+
+			@Override
+			public void afterViewChange(final ViewChangeEvent event) {
+				for (final Iterator<Component> it = menuItemsLayout.iterator(); it.hasNext();) {
+					it.next().removeStyleName(Constants.STYLE_SELECTED);
+				}
+				for (final Entry<String, String> item : menuItems.entrySet()) {
+					if (event.getViewName().equals(item.getKey())) {
+						for (final Iterator<Component> it = menuItemsLayout.iterator(); it.hasNext();) {
+							final Component c = it.next();
+							if (c.getCaption() != null && c.getCaption().startsWith(item.getValue())) {
+								c.addStyleName(Constants.STYLE_SELECTED);
+								break;
+							}
+						}
+						break;
+					}
+				}
+				menu.removeStyleName(Constants.STYLE_VALO_MENU_VISIBLE);
+			}
+		};
+	}
+	
+	/**
+	 * A Navigator által megtekinthető oldalak felvétele
+	 */
+	private void addViewsToNavigator() {
+		navigator.addView(Constants.WELCOME_SCREEN, WelcomePanel.class);
+		navigator.addView(Constants.SETTINGS_SCREEN, UserSettingsPanel.class);		
+		navigator.addView(Constants.IMPORT_PRODUCTS_SCREEN, ImportProductsPanel.class);
+		navigator.addView(Constants.EXPORT_PRODUCTS_SCREEN, ExportProductsPanel.class);
+		if (loggedUser!=null && loggedUser.isAdmin()){
+			navigator.addView(Constants.USER_MANAGEMENT_SCREEN, UserManagementPanel.class);
+			navigator.addView(Constants.PRODUCT_MANAGEMENT_SCREEN, ProductManagementPanel.class);
+			navigator.addView(Constants.SUPPLIER_MANAGEMENT_SCREEN, SupplierManagementPanel.class);
+			navigator.addView(Constants.CUSTOMER_MANAGEMENT_SCREEN, CustomerManagementPanel.class);
+			navigator.addView(Constants.STORAGE_MANAGEMENT_SCREEN, StorageManagementPanel.class);
+			navigator.addView(Constants.LOGS, LogPanel.class);
+		}
+		if (loggedUser!=null && (loggedUser.isAdmin() || loggedUser.isStatistics())){
+			navigator.addView(Constants.STATISTICS, StatisticsPanel.class);	
+		}
+	}
+
+	/**
+	 * A menüsáv megalkotása
+	 * @return A menüsáv layoutja
+	 */
+	private CssLayout buildMenu() {
+		menu.setId(Constants.ID_VALO_MENU);
+		putMenuItems();
+		final HorizontalLayout titleHorizontalLayout = new HorizontalLayout();
+		titleHorizontalLayout.setWidth(Constants.SIZE_100_PERCENT);
+		titleHorizontalLayout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
+		titleHorizontalLayout.addStyleName(Constants.STYLE_VALO_MENU_TITLE);
+		menu.addComponent(titleHorizontalLayout);
+		final Label title = new Label(Constants.TITLE_TEXT_H3,ContentMode.HTML);
+		title.setSizeUndefined();
+		titleHorizontalLayout.addComponent(title);
+		titleHorizontalLayout.setMargin(false);
+		menu.addComponent(createAccountSection());
+		menuItemsLayout.setPrimaryStyleName(Constants.STYLE_VALO_ITEMS);
+		menu.addComponent(menuItemsLayout);
+		menu.setSizeUndefined();
+		for (final Entry<String,String> item : menuItems.entrySet()){
+			setMenuNavigation(item);
+		}
+		return menu;
+	}
+
+	/**
+	 * Menüpontok bepakolása a Map-be.
+	 * Itt kezelhető, hogy egyes userek milyen menüpontokat láthatnak a menüsávon
+	 */
+	private void putMenuItems() {
+		if (loggedUser!=null && loggedUser.isAdmin()){
+			menuItems.put(Constants.PRODUCT_MANAGEMENT_SCREEN, Constants.PRODUCT_MANAGEMENT_CAPTION);
+			menuItems.put(Constants.SUPPLIER_MANAGEMENT_SCREEN, Constants.SUPPLIER_MANAGEMENT_CAPTION);
+			menuItems.put(Constants.CUSTOMER_MANAGEMENT_SCREEN, Constants.CUSTOMER_MANAGEMENT_CAPTION);	
+			menuItems.put(Constants.STORAGE_MANAGEMENT_SCREEN, Constants.STORAGE_MANAGEMENT_CAPTION);
+		}		
+		menuItems.put(Constants.IMPORT_PRODUCTS_SCREEN, Constants.IMPORT_PRODUCTS_CAPTION);
+		menuItems.put(Constants.EXPORT_PRODUCTS_SCREEN, Constants.EXPORT_PRODUCTS_CAPTION);
+		if (loggedUser!=null && (loggedUser.isAdmin() || loggedUser.isStatistics())){
+			menuItems.put(Constants.STATISTICS, Constants.STATS_CAPTION);
+			menuItems.put(Constants.LOGS, Constants.LOGS_CAPTION);
+		}	
+	}
+	
+	/**
+	 * A felhasználói profilképet és a lenyíló menüt generáló metódus
+	 * @return A layout, amint rajta van a profilkép és a user neve
+	 */
+	private Component createAccountSection(){
+		userSettings = new MenuBar();
+		userSettings.addStyleName(Constants.STYLE_USER_MENU);
+		settingsItem = null;
+		refreshUserPic(loggedUser.getPicture());
+		final MenuBar.Command command = new MenuBar.Command() {
+			
+			private static final long serialVersionUID = 6093136175734653763L;
+
+			@Override
+			public void menuSelected(final MenuItem selectedItem) {
+				if (Constants.USER_MANAGEMENT_CAPTION.equals(selectedItem.getText())){
+					navigator.navigateTo(Constants.USER_MANAGEMENT_SCREEN);
+				} else if (Constants.SETTINGS_CAPTION.equals(selectedItem.getText())) {
+					navigator.navigateTo(Constants.SETTINGS_SCREEN);
+				} else {
+					logOut();
+				}
+			}
+		};
+		if (loggedUser.isAdmin()){
+			settingsItem.addItem(Constants.USER_MANAGEMENT_CAPTION, command);
+		}
+		settingsItem.addItem(Constants.SETTINGS_CAPTION, command);
+		settingsItem.addSeparator();
+		settingsItem.addItem(Constants.LOGOUT_CAPTION, command);
+		return userSettings;
+	}
+	
+	/**
+	 * Menüpontok betétele a sávba.
+	 * Ha egy csoport legelső menüpontját kapja, akkor rak egy új csoportot jelölő Label-t
+	 * @param item A menüpont, amit ki szeretnénk tenni
+	 */
+	private void setMenuNavigation(final Entry<String,String> item){
+		Label label = new Label(Constants.EMPTY_STRING);
+		if (Constants.PRODUCT_MANAGEMENT_SCREEN.equals(item.getKey())){
+			label = new Label(Constants.SEPARATOR_DATA_CAPTION,ContentMode.HTML);
+			label.setPrimaryStyleName(Constants.STYLE_VALO_SUBTITLE);
+			label.addStyleName(Constants.STYLE_H4);
+			label.setSizeUndefined();
+			menuItemsLayout.addComponent(label);
+		}
+		if (Constants.IMPORT_PRODUCTS_SCREEN.equals(item.getKey())){
+			label = new Label(Constants.SEPARATOR_PURCHASES_CAPTION,ContentMode.HTML);
+			label.setPrimaryStyleName(Constants.STYLE_VALO_SUBTITLE);
+			label.addStyleName(Constants.STYLE_H4);
+			label.setSizeUndefined();
+			menuItemsLayout.addComponent(label);
+		}
+		if (Constants.STATISTICS.equals(item.getKey())){
+			label = new Label(Constants.SEPARATOR_STATISTICS_CAPTION,ContentMode.HTML);
+			label.setPrimaryStyleName(Constants.STYLE_VALO_SUBTITLE);
+			label.addStyleName(Constants.STYLE_H4);
+			label.setSizeUndefined();
+			menuItemsLayout.addComponent(label);
+		}
+		if (Constants.LOGS.equals(item.getKey())){
+			label = new Label(Constants.LOGS_CAPTION,ContentMode.HTML);
+			label.setPrimaryStyleName(Constants.STYLE_VALO_SUBTITLE);
+			label.addStyleName(Constants.STYLE_H4);
+			label.setSizeUndefined();
+			menuItemsLayout.addComponent(label);
+		}
+		final Button button = new Button(item.getValue(), new ClickListener(){
+
+			private static final long serialVersionUID = 6726924108259112456L;
+
+			@Override
+			public void buttonClick(final ClickEvent event) {
+				navigator.navigateTo(item.getKey());
+			}
+		});
+		button.setHtmlContentAllowed(true);
+		button.setPrimaryStyleName(Constants.STYLE_VALO_MENU_ITEM);
+		menuItemsLayout.addComponent(button);
+	}
+
+	/**
+	 * Bejelentkeztető UI megalkotása
+	 */
+	private void createLoginUIWithLogo() {
+		Page.getCurrent().setTitle(Constants.TITLE);
+        final VerticalLayout mainLayout = new VerticalLayout();
+        mainLayout.setWidth(Constants.SIZE_100_PERCENT);
+        mainLayout.setMargin(true);
+        mainLayout.setSpacing(true);
+        final VerticalLayout titleAndLogoLayout = createTitleAndLogoLayout();
+        mainLayout.addComponent(titleAndLogoLayout);
+        final HorizontalLayout loginHorizontalLayout = new HorizontalLayout();
+        loginHorizontalLayout.setMargin(true);
+        loginHorizontalLayout.setId(Constants.ID_LOGIN);
+        final VerticalLayout loginLayout = new VerticalLayout();
+        loginLayout.setWidth(null);
+        loginLayout.setSpacing(true);
+        final TextField usernameTextField = new TextField(Constants.USERNAME_CAPTION);
+        usernameTextField.setWidth(Constants.SIZE_300PX);
+        usernameTextField.setHeight(Constants.SIZE_30PX);
+        usernameTextField.focus();
+        loginLayout.addComponent(usernameTextField);
+        final PasswordField passwordTextField = new PasswordField(Constants.PASSWORD_CAPTION);
+        passwordTextField.setWidth(Constants.SIZE_300PX);
+        passwordTextField.setHeight(Constants.SIZE_30PX);
+        loginLayout.addComponent(passwordTextField);
+        final GridLayout buttonGrid = createLoginButtonLayout(usernameTextField, passwordTextField);
+        loginLayout.addComponent(buttonGrid);
+        loginHorizontalLayout.addComponent(loginLayout);
+        loginHorizontalLayout.setComponentAlignment(loginLayout, Alignment.MIDDLE_CENTER);
+        mainLayout.addComponent(loginHorizontalLayout);
+        mainLayout.setComponentAlignment(loginHorizontalLayout, Alignment.MIDDLE_CENTER);
+        setContent(mainLayout);	
+	}
+	
+	/**
+	 * Név és logo kirajzolása
+	 * @return A nevet és logot tartalmazó layout
+	 */
+	private VerticalLayout createTitleAndLogoLayout(){
+		final VerticalLayout titleAndLogoLayout = new VerticalLayout();
+		final HorizontalLayout titleLayout = new HorizontalLayout();
+		final Image logo = new Image(null, new ThemeResource(Constants.LOGO_LOCATION));
+		logo.setHeight(Constants.SIZE_150PX);
+		logo.setWidthUndefined();
+		titleAndLogoLayout.addComponent(logo);
+		titleAndLogoLayout.setComponentAlignment(logo, Alignment.MIDDLE_CENTER);
+		titleLayout.setWidth(Constants.SIZE_100_PERCENT);
+		final Label titleLabel = new Label(Constants.TITLE);
+		titleLabel.setWidth(null);
+		titleLabel.addStyleName(ValoTheme.LABEL_H1);
+		titleLayout.addComponent(titleLabel);
+		titleLayout.setComponentAlignment(titleLabel, Alignment.MIDDLE_CENTER);
+		titleLayout.setExpandRatio(titleLabel, Constants.CONST_1);
+		titleAndLogoLayout.addComponent(titleLayout);
+		return titleAndLogoLayout;
+	}
+	
+	/**
+	 * A bejelentkezéshez szükséges username-password inputmezőket és verziószámot tartalmazó layout generálása
+	 * @param usernameTextField Felhasználónév mező
+	 * @param passwordTextField Jelszó mező
+	 * @return A bejelentkeztető felületet és verziószámot tartalmazó layout
+	 */
+	private GridLayout createLoginButtonLayout(final TextField usernameTextField, final PasswordField passwordTextField){
+		final GridLayout buttonGrid = new GridLayout(Constants.CONST_2,Constants.CONST_1);
+		buttonGrid.setWidth(Constants.SIZE_300PX);
+		buttonGrid.setSpacing(true);
+		final HorizontalLayout labelPanel = new HorizontalLayout();
+		final Label versionNumberLabel = new Label(Constants.VERSION_CAPTION + Version.VERSION_NUMBER);
+		labelPanel.addComponent(versionNumberLabel);
+		versionNumberLabel.setWidth(null);
+		buttonGrid.addComponent(labelPanel);
+		buttonGrid.setComponentAlignment(labelPanel, Alignment.MIDDLE_LEFT);
+		final Button loginButton = new Button(Constants.LOGIN_CAPTION);
+		loginButton.setWidth(Constants.SIZE_150PX);
+		loginButton.setClickShortcut(KeyCode.ENTER);
+		loginButton.addClickListener(new ClickListener(){
+
+			private static final long serialVersionUID = -2119674789611252424L;
+
+			@Override
+			public void buttonClick(final ClickEvent event) {		
+				if (!Constants.EMPTY_STRING.equals(usernameTextField.getValue()) && !Constants.EMPTY_STRING.equals(passwordTextField.getValue())){
+					loggedUser = new User();
+					final boolean success = LoginService.signIn(usernameTextField.getValue(), passwordTextField.getValue(),loggedUser);
+					if (success){						
+						getSession().setAttribute(Constants.USER, loggedUser);
+						createMainUI();
+					} else {
+						getSession().setAttribute(Constants.USER, loggedUser);
+						(new Notification(Constants.LOGIN_ERROR_HEADER,Constants.LOGIN_ERROR_CAPTION,Type.ERROR_MESSAGE)).show(Page.getCurrent());
+						logOut();
+					}
+				} else {
+					(new Notification(Constants.LOGIN_ERROR_HEADER,Constants.LOGIN_ERROR_MISSING_CAPTION,Type.ERROR_MESSAGE)).show(Page.getCurrent());
+				}
+			}		
+		});
+		buttonGrid.addComponent(loginButton);
+		buttonGrid.setComponentAlignment(loginButton, Alignment.MIDDLE_RIGHT);
+		return buttonGrid;
+	}
+
+	/**
+	 * Kijelentkezteti a felhasználót
+	 */
+	private void logOut(){		
+		VaadinSession.getCurrent().close();
+		UI.getCurrent().getPage().setUriFragment(Constants.EMPTY_STRING);
+		loggedUser=null;
+		UI.getCurrent().getPage().reload();
+	}
+	
+	/**
+	 * Beállítja a felhasználó profilképét a UI-on
+	 * @param img A felhasználó képe
+	 */
+	public void refreshUserPic(final byte[] img) {
+        if (img != null) {
+        	final StreamResource imageSrc = new StreamResource(
+                    new StreamResource.StreamSource() {
+
+						private static final long serialVersionUID = 2020878642095508692L;
+
+						@Override
+                        public InputStream getStream() {
+                            return new ByteArrayInputStream(img);
+                        }
+                    }, Constants.USER_PICTURE_FILENAME);
+        	imageSrc.setCacheTime(Constants.CONST_0);
+            if (settingsItem == null) {
+                settingsItem = userSettings.addItem(loggedUser.getUserName(), imageSrc, null);
+            } else {
+                settingsItem.setIcon(imageSrc);
+            }
+        } else {
+            final ThemeResource themeResource = new ThemeResource(Constants.DEFAULT_PROFILE_PICTURE);
+            settingsItem = userSettings.addItem(loggedUser.getUserName(), themeResource, null);
+        }
+    }
+}

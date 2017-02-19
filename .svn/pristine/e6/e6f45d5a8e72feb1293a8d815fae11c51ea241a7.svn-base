@@ -1,0 +1,120 @@
+// Global variable overrides. Must be declared before importing Valo.
+
+// Defines the plaintext font size, weight and family. Font size affects general component sizing.
+//$v-font-size: 16px;
+//$v-font-weight: 300;
+//$v-font-family: "Open Sans", sans-serif;
+
+// Defines the border used by all components.
+//$v-border: 1px solid (v-shade 0.7);
+//$v-border-radius: 4px;
+
+// Affects the color of some component elements, e.g Button, Panel title, etc
+//$v-background-color: hsl(210, 0%, 98%);
+// Affects the color of content areas, e.g  Panel and Window content, TextField input etc
+//$v-app-background-color: $v-background-color;
+
+// Affects the visual appearance of all components
+//$v-gradient: v-linear 8%;
+//$v-bevel-depth: 30%;
+//$v-shadow-opacity: 5%;
+
+// Defines colors for indicating status (focus, success, failure)
+//$v-focus-color: valo-focus-color(); // Calculates a suitable color automatically
+//$v-friendly-color: #2c9720;
+//$v-error-indicator-color: #ed473b;
+
+// For more information, see: https://vaadin.com/book/-/page/themes.valo.html
+// Example variants can be copy/pasted from https://vaadin.com/wiki/-/wiki/Main/Valo+Examples
+
+@import "../valo/valo.scss";
+
+@mixin lagerhause {
+  @include valo;
+
+  // Insert your own theme rules here
+ 
+	
+/*****************************
+ * CSS by Petrucza Alexandra *
+ *****************************/
+ 
+ .v-button-wrap img.v-icon {position:absolute;top:0px;display:block; margin: 20px; width:20px; height:20px;}";
+ 
+.v-button-noborder {background:transparent;}";
+
+.v-table-body {-moz-user-select: -moz-none; -khtml-user-select: none; -webkit-user-select: none; -ms-user-select: none; user-select: none;}
+
+.v-button-nopadding {padding:0;}
+
+.v-caption .v-captiontext {
+	font-size: 130%;
+}
+
+.v-slot .v-label {
+	font-size: 100%;
+}
+
+.v-slot-h1 .v-label {
+	font-size: 200%;
+}
+
+.valo-menu-title,
+.v-panel-caption {
+	background-image: -webkit-linear-gradient(top, #004d60 60%, #007e9e 98%);
+	background-image: linear-gradient(to bottom,#004d60 60%, #007e9e 98%);
+	color: white;
+}
+
+.v-panel-content {
+	background-color: #E8FAFF;
+} 
+
+.v-label {
+	font-weight: bold;
+	font-size: 150%;
+}
+
+.v-label h3 {
+	font-weight: bold;
+	color: white;
+	font-size: 100%;
+}
+
+.v-button {
+	background-image: -webkit-linear-gradient(top, #00b9e8 60%, #007e9e 98%);
+	background-image: linear-gradient(to bottom,#00b9e8 60%, #007e9e 98%);
+	border-color: #007e9e;
+}
+
+.v-table-header-cell,
+.v-table-header-cell-asc,
+.v-table-header-cell-desc {
+ 	background-image: -webkit-linear-gradient(top, #3ED8FF 60%, #00b9e8 98%);
+	background-image: linear-gradient(to bottom,#3ED8FF 60%, #00b9e8 98%);
+	font-weight: bold;
+}
+
+.valo-menu {
+	background-image: -webkit-linear-gradient(top, #007e9e 60%, #007e9e 98%);
+	background-image: linear-gradient(to bottom,#007e9e 60%, #007e9e 98%);
+}
+
+.valo-menu-item {
+	color: #77E3FF;
+}
+
+.valo-menu-subtitle,
+.v-menubar-menuitem-caption {
+	color: white;
+}
+
+.v-menubar-submenu .v-menubar-menuitem .v-menubar-menuitem-caption {
+	color: black;
+}
+
+* {
+font-family: Helvetica, Verdana, Arial, sans-serif;
+}
+
+

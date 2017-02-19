@@ -1,0 +1,424 @@
+package org.lagerhause.Model.Services;
+
+import java.sql.Timestamp;
+
+import javax.persistence.EntityTransaction;
+
+import org.hibernate.HibernateException;
+import org.lagerhause.Model.Classes.Customer;
+import org.lagerhause.Model.Classes.Export;
+import org.lagerhause.Model.Classes.Import;
+import org.lagerhause.Model.Classes.Storage;
+import org.lagerhause.Model.Classes.Supplier;
+import org.lagerhause.Model.Classes.User;
+import org.lagerhause.Model.Classes.Ware;
+
+import com.vaadin.addon.jpacontainer.JPAContainer;
+import com.vaadin.addon.jpacontainer.JPAContainerFactory;
+import com.vaadin.data.fieldgroup.FieldGroup;
+import com.vaadin.server.Page;
+import com.vaadin.ui.ComboBox;
+import com.vaadin.ui.Field;
+import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.Notification;
+import com.vaadin.ui.PopupDateField;
+import com.vaadin.ui.TextField;
+import com.vaadin.ui.Notification.Type;
+
+/**
+ * Az AddListenerhez szükséges függvények
+ * @author Bereczki Tamás
+ *
+ */
+public class AddListeners extends ListenerService {
+	
+	/** 
+	 * Legyártja az User hozzáadó ablakot
+	 * @param fg
+	 * @param fl
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerUserForm(FieldGroup fg, FormLayout fl) {
+		Field<?> name = fg.buildAndBind(ServiceConstants.USERNAME, ServiceConstants.USERNAMEPROP);
+		Field<?> admin = fg.buildAndBind(ServiceConstants.ADMIN, ServiceConstants.ADMINPROP);
+		Field<?> statistic = fg.buildAndBind(ServiceConstants.STATISTIC, ServiceConstants.STATISTICPROP);
+		Field<?> password = fg.buildAndBind(ServiceConstants.PASSWORD,ServiceConstants.PASSWORDPROP);
+		password.setEnabled(false);
+		fl.addComponent(name);
+		fl.addComponent(admin);
+		fl.addComponent(statistic);
+	}
+
+	/**
+	 * Legyártja a Customer hozzáadó ablakot
+	 * @param fg
+	 * @param fl
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerCustomerForm(FieldGroup fg, FormLayout fl) {
+		Field<?> name = fg.buildAndBind(ServiceConstants.NAME, ServiceConstants.C_NAMEPROP);
+		Field<?> country = fg.buildAndBind(ServiceConstants.COUNTRY, ServiceConstants.C_COUNTRYPROP);
+		Field<?> city = fg.buildAndBind(ServiceConstants.CITY, ServiceConstants.C_CITYPROP);
+		Field<?> street = fg.buildAndBind(ServiceConstants.STREET, ServiceConstants.C_STREETPROP);
+		Field<?> house = fg.buildAndBind(ServiceConstants.HOUSENUMBER, ServiceConstants.C_HOUSENUMBERPROP);
+		Field<?> phone = fg.buildAndBind(ServiceConstants.PHONENUMBER, ServiceConstants.C_PHONENUMBERPROP);
+		fl.addComponent(name);
+		fl.addComponent(country);
+		fl.addComponent(city);
+		fl.addComponent(street);
+		fl.addComponent(house);
+		fl.addComponent(phone);
+	}
+
+	/**
+	 * Legyártja a kivitel hozzáadó ablakot
+	 * @param fg
+	 * @param fl
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerExportForm(FieldGroup fg, FormLayout fl) {
+		Field<?> time = fg.buildAndBind(ServiceConstants.DATE,ServiceConstants.TIMESTAMPPROP);
+		hour = new TextField("Óra");
+		hour.setValue("0");
+		min = new TextField("Perc");
+		min.setValue("0");
+		Field<?> success = fg.buildAndBind(ServiceConstants.SUCCESS, ServiceConstants.SUCCESSPROP);
+		storageJPA = JPAContainerFactory.makeNonCached(Ware.class, CreateService.createEntityManager());
+		storageList = new ComboBox(ServiceConstants.WARENAME, storageJPA);
+		if (storageList.getItemIds().iterator().hasNext()) {
+			storageList.setValue(storageList.getItemIds().iterator().next());
+		}
+		else {
+			new Notification(ServiceConstants.ALERTSTRING, ServiceConstants.NOWARE, Type.ERROR_MESSAGE).show(Page.getCurrent());
+		}
+		storageList.setNewItemsAllowed(false);
+		storageList.setTextInputAllowed(false);
+		storageList.setItemCaptionPropertyId(ServiceConstants.WARENAMEPROP);
+		storageList.setNullSelectionAllowed(false);
+		customerJPA = JPAContainerFactory.makeNonCached(Customer.class, CreateService.createEntityManager());
+		customerList = new ComboBox(ServiceConstants.NAME, customerJPA);
+		if (customerList.getItemIds().iterator().hasNext()) {
+			customerList.setValue(customerList.getItemIds().iterator().next());
+		}
+		else {
+			new Notification(ServiceConstants.ALERTSTRING, ServiceConstants.NOCUSTOMER, Type.ERROR_MESSAGE).show(Page.getCurrent());
+		}
+		customerList.setNewItemsAllowed(false);
+		customerList.setTextInputAllowed(false);
+		customerList.setItemCaptionPropertyId(ServiceConstants.C_NAMEPROP);
+		customerList.setNullSelectionAllowed(false);
+		Field<?> quantity = fg.buildAndBind(ServiceConstants.WAREQUANTITY, ServiceConstants.WAREQUANTITYPROP);
+		fl.addComponent(time);
+		fl.addComponent(hour);
+		fl.addComponent(min);
+		fl.addComponent(success);
+		fl.addComponent(storageList);
+		fl.addComponent(customerList);
+		fl.addComponent(quantity);
+	}
+
+	/**
+	 * Legyártja a behozatal hozzáadó ablakot
+	 * @param fg
+	 * @param fl
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerImportForm(FieldGroup fg, FormLayout fl) {
+		Field<?> time = fg.buildAndBind(ServiceConstants.DATE,ServiceConstants.TIMESTAMPPROP);
+		hour = new TextField("Óra");
+		hour.setValue("0");
+		min = new TextField("Perc");
+		min.setValue("0");
+		Field<?> success = fg.buildAndBind(ServiceConstants.SUCCESS, ServiceConstants.SUCCESSPROP);
+		storageJPA = JPAContainerFactory.makeNonCached(Ware.class, CreateService.createEntityManager());
+		storageList = new ComboBox(ServiceConstants.WARENAME, storageJPA);
+		if (storageList.getItemIds().iterator().hasNext()) {
+			storageList.setValue(storageList.getItemIds().iterator().next());
+		}
+		else {
+			new Notification(ServiceConstants.ALERTSTRING, ServiceConstants.NOWARE, Type.ERROR_MESSAGE).show(Page.getCurrent());
+		}
+		storageList.setNewItemsAllowed(false);
+		storageList.setTextInputAllowed(false);
+		storageList.setItemCaptionPropertyId(ServiceConstants.WARENAMEPROP);
+		storageList.setNullSelectionAllowed(false);
+		customerJPA = JPAContainerFactory.makeNonCached(Supplier.class, CreateService.createEntityManager());
+		supplierList = new ComboBox(ServiceConstants.SUPPLIERNAME, customerJPA);
+		if (storageList.getItemIds().iterator().hasNext()) {
+			supplierList.setValue(supplierList.getItemIds().iterator().next());
+		}
+		else {
+			new Notification(ServiceConstants.ALERTSTRING, ServiceConstants.NOSUPPLIER, Type.ERROR_MESSAGE).show(Page.getCurrent());
+		}
+		supplierList.setNewItemsAllowed(false);
+		supplierList.setTextInputAllowed(false);
+		supplierList.setItemCaptionPropertyId(ServiceConstants.SUPPLIERNAMEPROP);
+		supplierList.setNullSelectionAllowed(false);
+		Field<?> quantity = fg.buildAndBind(ServiceConstants.WAREQUANTITY, ServiceConstants.WAREQUANTITYPROP);
+		fl.addComponent(time);
+		fl.addComponent(hour);
+		fl.addComponent(min);
+		fl.addComponent(success);
+		fl.addComponent(storageList);
+		fl.addComponent(supplierList);
+		fl.addComponent(quantity);
+	}
+
+	/**
+	 * Legyártja a Storage hozzáadó ablakot
+	 * @param fg
+	 * @param fl
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerStorageForm(FieldGroup fg, FormLayout fl) {
+		Field<?> name = fg.buildAndBind(ServiceConstants.STORAGENAME, ServiceConstants.STORAGENAMEPROP);
+		fl.addComponent(name);
+	}
+
+	/**
+	 * Legyártja a Supplier hozzáadó ablakot
+	 * @param fg
+	 * @param fl
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerSupplierForm(FieldGroup fg, FormLayout fl) {
+		Field<?> name = fg.buildAndBind(ServiceConstants.SUPPLIERNAME, ServiceConstants.SUPPLIERNAMEPROP);
+		Field<?> country = fg.buildAndBind(ServiceConstants.COUNTRY, ServiceConstants.S_COUNTRYPROP);
+		Field<?> city = fg.buildAndBind(ServiceConstants.CITY, ServiceConstants.S_CITYPROP);
+		Field<?> street = fg.buildAndBind(ServiceConstants.STREET, ServiceConstants.S_STREETPROP);
+		Field<?> house = fg.buildAndBind(ServiceConstants.HOUSENUMBER, ServiceConstants.S_HOUSENUMBERPROP);
+		Field<?> phone = fg.buildAndBind(ServiceConstants.PHONENUMBER, ServiceConstants.S_PHONENUMBERPROP);
+		fl.addComponent(name);
+		fl.addComponent(country);
+		fl.addComponent(city);
+		fl.addComponent(street);
+		fl.addComponent(house);
+		fl.addComponent(phone);
+	}
+
+	/**
+	 * Legyártja a Ware hozzáadó ablakot
+	 * @param fg
+	 * @param fl
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerWareForm(FieldGroup fg, FormLayout fl) {
+		Field<?> name = fg.buildAndBind(ServiceConstants.WARENAME, ServiceConstants.WARENAMEPROP);
+		Field<?> category = fg.buildAndBind(ServiceConstants.WARECATEGORY, ServiceConstants.WARECATEGORYPROP);
+		storageJPA = JPAContainerFactory.makeNonCached(Storage.class, CreateService.createEntityManager());
+		storageList = new ComboBox(ServiceConstants.WARESTORAGE, storageJPA);
+		storageList.setTextInputAllowed(false);
+		storageList.setNewItemsAllowed(false);
+		storageList.setItemCaptionPropertyId(ServiceConstants.STORAGENAMEPROP);
+		storageList.setNullSelectionAllowed(false);
+		Field<?> serial = fg.buildAndBind(ServiceConstants.WARESERIAL, ServiceConstants.WARESERIALPROP);
+		Field<?> quantity = fg.buildAndBind(ServiceConstants.WAREQUANTITY, ServiceConstants.WAREQUANTITYPROP);
+		fl.addComponent(name);
+		fl.addComponent(category);
+		fl.addComponent(storageList);
+		fl.addComponent(serial);
+		fl.addComponent(quantity);
+	}
+
+	/**
+	 * Elvégzi az adatbázisműveletet az User hozzáadásra
+	 * @param fg
+	 * @param jpa
+	 * @param itemIdForAdd
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerUserClick(FieldGroup fg, JPAContainer<?> jpa, Object itemIdForAdd) {
+		if (((String)fg.getField(ServiceConstants.USERNAMEPROP).getValue()).equals("") ) {
+			new Notification(ServiceConstants.ALERTSTRING,ServiceConstants.EMPTYTEXT,Type.ERROR_MESSAGE).show(Page.getCurrent());
+			jpa.removeItem(itemIdForAdd);
+		}
+		else {
+			jpa.removeItem(itemIdForAdd);
+			em = CreateService.createEntityManager();
+			EntityTransaction tx = em.getTransaction();
+			try {
+				tx.begin();
+				User u = new User();
+				u.setUserName((String)fg.getField(ServiceConstants.USERNAMEPROP).getValue());
+				u.setPassword((String)fg.getField(ServiceConstants.PASSWORDPROP).getValue());
+				u.setAdmin((boolean)fg.getField(ServiceConstants.ADMINPROP).getValue());
+				u.setStatistics((boolean)fg.getField(ServiceConstants.STATISTICPROP).getValue());
+				u.setDeleted(false);
+				u.setPicture(null);
+				em.persist(u);
+				tx.commit();
+				jpa.refresh();
+				LogService.AddLogEntry(ServiceConstants.ADDEDUSER, u, User.class);
+			}
+			catch (HibernateException e) {
+				if (tx != null && tx.isActive())
+					tx.rollback();
+				e.printStackTrace();
+			}
+			finally {
+				em.close();
+			}
+		}
+	}
+
+	/**
+	 * Elvégzi az adatbázisműveletet a kivitelre
+	 * @param fg
+	 * @param jpa
+	 * @param itemIdForAdd
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerExportClick(FieldGroup fg, JPAContainer<?> jpa, Object itemIdForAdd) {
+		int quantity = Integer.valueOf((String)fg.getField(ServiceConstants.WAREQUANTITYPROP).getValue());
+		Ware ware;
+		Customer customer;
+		jpa.removeItem(itemIdForAdd);
+		if (quantity <= 0) 
+			new Notification(ServiceConstants.ALERTSTRING, ServiceConstants.WRONGVALUE, Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else if (storageList.getValue() == null || customerList.getValue() == null)
+			new Notification(ServiceConstants.ALERTSTRING,ServiceConstants.EMPTYTEXT,Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else if (Integer.parseInt(hour.getValue()) > 23 || Integer.parseInt(hour.getValue()) < 0 
+				|| Integer.parseInt(min.getValue()) > 59 || Integer.parseInt(min.getValue()) < 0)
+			new Notification(ServiceConstants.ALERTSTRING,ServiceConstants.WRONGVALUE,Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else {
+			em = CreateService.createEntityManager();
+			ware = em.find(Ware.class, storageList.getValue());
+			if (ware.getQuantity() < quantity) {
+				new Notification(ServiceConstants.ALERTSTRING,ServiceConstants.NOENOUGHWARES,Type.ERROR_MESSAGE).show(Page.getCurrent());
+				return;
+			}
+			customer = em.find(Customer.class, customerList.getValue());
+			em = CreateService.createEntityManager();
+			EntityTransaction tx = em.getTransaction();
+			try {
+				tx.begin();
+				Export e = new Export();
+				Timestamp t = new Timestamp(((PopupDateField)fg.getField(ServiceConstants.TIMESTAMPPROP)).getValue().getTime());
+				long timeNow = t.getTime() +
+						+ Integer.parseInt(hour.getValue()) * 1000 * 60 * 60 
+						+ Integer.parseInt(min.getValue()) * 1000 * 60;
+				t.setTime(timeNow);
+				e.setTimestamp(t);
+				e.setSuccess((Boolean)fg.getField(ServiceConstants.SUCCESSPROP).getValue());
+				e.setWare(ware);
+				e.setCustomer(customer);
+				e.setQuantity(quantity);
+				e.setDeleted(false);
+				em.persist(e);
+				tx.commit();
+				jpa.refresh();
+				if (e.isSuccess())
+					decreaseWareQuantity(ware.getId(),e.getQuantity());
+				LogService.AddLogEntry(ServiceConstants.ADDEDEXPORT, e, Export.class);
+			}
+			catch (HibernateException e) {
+				if (tx != null && tx.isActive())
+					tx.rollback();
+				e.printStackTrace();
+			}
+			finally {
+				em.close();
+			}
+		}
+	}
+
+	/**
+	 * Elvégzi az adatbázisműveletet a behozatalra
+	 * @param fg
+	 * @param jpa
+	 * @param itemIdForAdd
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerImportClick(FieldGroup fg, JPAContainer<?> jpa, Object itemIdForAdd) {
+		int quantity = Integer.valueOf((String)fg.getField(ServiceConstants.WAREQUANTITYPROP).getValue());
+		Ware ware;
+		Supplier supplier;
+		jpa.removeItem(itemIdForAdd);
+		if (quantity <= 0) 
+			new Notification(ServiceConstants.ALERTSTRING, ServiceConstants.WRONGVALUE, Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else if (storageList.getValue() == null || supplierList.getValue() == null)
+			new Notification(ServiceConstants.ALERTSTRING,ServiceConstants.EMPTYTEXT,Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else if (Integer.parseInt(hour.getValue()) > 23 || Integer.parseInt(hour.getValue()) < 0 
+				|| Integer.parseInt(min.getValue()) > 59 || Integer.parseInt(min.getValue()) < 0)
+			new Notification(ServiceConstants.ALERTSTRING,ServiceConstants.WRONGVALUE,Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else {
+			em = CreateService.createEntityManager();
+			ware = em.find(Ware.class, storageList.getValue());
+			supplier = em.find(Supplier.class, supplierList.getValue());
+			EntityTransaction tx = em.getTransaction();
+			try {
+				tx.begin();
+				Import i = new Import();
+				Timestamp t = new Timestamp(((PopupDateField)fg.getField(ServiceConstants.TIMESTAMPPROP)).getValue().getTime());
+				long timeNow = t.getTime() +
+						+ Integer.parseInt(hour.getValue()) * 1000 * 60 * 60 
+						+ Integer.parseInt(min.getValue()) * 1000 * 60;
+				t.setTime(timeNow);
+				i.setTimestamp(t);
+				i.setSuccess((Boolean)fg.getField(ServiceConstants.SUCCESSPROP).getValue());
+				i.setWare(ware);
+				i.setSupplier(supplier);
+				i.setQuantity(quantity);
+				i.setDeleted(false);
+				em.persist(i);
+				tx.commit();
+				jpa.refresh();
+				if (i.isSuccess())
+					increaseWareQuantity(ware.getId(),i.getQuantity());
+				LogService.AddLogEntry(ServiceConstants.ADDEDIMPORT, i, Import.class);
+			}
+			catch (HibernateException e) {
+				if (tx != null && tx.isActive())
+					tx.rollback();
+				e.printStackTrace();
+			}
+			finally {
+				em.close();
+			}
+		}
+	}
+
+	/**
+	 * Elvégzi az adatbázisműveletet a termékhozzáadásra
+	 * @param fg
+	 * @param jpa
+	 * @param itemIdForAdd
+	 * @author Bereczki Tamás
+	 */
+	protected static void addListenerWareClick(FieldGroup fg, JPAContainer<?> jpa, Object itemIdForAdd) {
+		int quantity = Integer.valueOf((String)fg.getField(ServiceConstants.WAREQUANTITYPROP).getValue());
+		Storage s;
+		jpa.removeItem(itemIdForAdd);
+		if (quantity < 0) 
+			new Notification(ServiceConstants.ALERTSTRING, ServiceConstants.WRONGVALUE, Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else if (storageList.getValue() == null)
+			new Notification(ServiceConstants.ALERTSTRING,ServiceConstants.EMPTYTEXT,Type.ERROR_MESSAGE).show(Page.getCurrent());
+		else {
+			s = getStorageById((long)storageList.getValue());
+			em = CreateService.createEntityManager();
+			EntityTransaction tx = em.getTransaction();
+			try {
+				tx.begin();
+				Ware w = new Ware();
+				w.setName((String)fg.getField(ServiceConstants.WARENAMEPROP).getValue());
+				w.setCategory((String)fg.getField(ServiceConstants.WARECATEGORYPROP).getValue());
+				w.setSerial((String)fg.getField(ServiceConstants.WARESERIALPROP).getValue());
+				w.setQuantity(quantity);
+				w.setStorage(s);
+				em.persist(w);
+				tx.commit();
+				jpa.refresh();
+				LogService.AddLogEntry(ServiceConstants.ADDEDWARE, w, Ware.class);
+			}
+			catch (HibernateException e) {
+				if (tx != null && tx.isActive())
+					tx.rollback();
+				e.printStackTrace();
+			}
+			finally {
+				em.close();
+			}
+		}
+	}
+
+}
